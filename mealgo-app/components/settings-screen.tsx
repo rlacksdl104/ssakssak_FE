@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 
@@ -8,16 +8,45 @@ interface SettingsScreenProps {
   onBack: () => void
 }
 
-export function SettingsScreen({ onBack }: SettingsScreenProps) {
-  const [settings, setSettings] = useState({
-    darkMode: true,
-    preferredMenuAlert: true,
-    timeDisplay: false,
-    highContrastMode: true,
-  })
+// 설정 타입 정의
+interface Settings {
+  darkMode: boolean
+  preferredMenuAlert: boolean
+  timeDisplay: boolean
+  highContrastMode: boolean
+}
 
-  const toggleSetting = (key: keyof typeof settings) => {
-    setSettings((prev) => ({ ...prev, [key]: !prev[key] }))
+// 기본 설정값
+const defaultSettings: Settings = {
+  darkMode: true,
+  preferredMenuAlert: true,
+  timeDisplay: false,
+  highContrastMode: true,
+}
+
+export function SettingsScreen({ onBack }: SettingsScreenProps) {
+  const [settings, setSettings] = useState<Settings>(defaultSettings)
+
+  // 컴포넌트 마운트 시 localStorage에서 설정 불러오기
+  useEffect(() => {
+    const savedSettings = localStorage.getItem("mealAppSettings")
+    if (savedSettings) {
+      try {
+        setSettings(JSON.parse(savedSettings))
+      } catch (error) {
+        console.error("설정 불러오기 실패:", error)
+      }
+    }
+  }, [])
+
+  // 설정 변경 시 localStorage에 저장
+  const toggleSetting = (key: keyof Settings) => {
+    setSettings((prev) => {
+      const newSettings = { ...prev, [key]: !prev[key] }
+      // localStorage에 즉시 저장
+      localStorage.setItem("mealAppSettings", JSON.stringify(newSettings))
+      return newSettings
+    })
   }
 
   return (
@@ -68,7 +97,6 @@ function SettingItem({
   )
 }
 
-// ✅ false일 때만 border 표시, true일 땐 border 제거
 function CustomSwitch({
   checked,
   onToggle,
@@ -81,25 +109,17 @@ function CustomSwitch({
       onClick={onToggle}
       className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${
         checked
-          ? // ✅ true 상태: 보라색 배경, border 없음
-            "bg-[#643BF0]"
-          : // ✅ false 상태: 회색 배경 + border 표시
-            "bg-[#e6e1e8] border-2 border-[#79747E]"
+          ? "bg-[#643BF0]"
+          : "bg-[#e6e1e8] border-2 border-[#79747E]"
       }`}
     >
       <span
         className={`absolute top-1/2 left-1 rounded-full transition-all duration-300 -translate-y-1/2 ${
           checked
-            ? // ✅ true: 기본 크기, 오른쪽 이동
-              "w-5 h-5 bg-white translate-x-5"
-            : // ✅ false: 원 크기 축소 + 중앙 유지
-              "w-[16px] h-[16px] bg-[#6e6874] translate-x-0"
+            ? "w-5 h-5 bg-white translate-x-5"
+            : "w-[16px] h-[16px] bg-[#6e6874] translate-x-0"
         }`}
       />
     </button>
   )
-
 }
-
-
-
